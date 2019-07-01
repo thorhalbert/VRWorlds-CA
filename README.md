@@ -15,3 +15,12 @@ Certificate Authority for VRWorlds - For Raspberry PI, written in Python
 * Encrypt this with the encrypting cert.  It may again ask for this passphrase.
 * Write the encrypted archive to the thumb drive.
 * Clean up - possibly wiping some files (not just deleting them).
+
+
+To-Do:
+* Started on the Schema of the RootConfig.yaml.
+* Need to figure out how I'm going to store things.   Possibly sqllite.   It has to have a very clear way of doing backups.  Nothing more catastophic than losing your CA keys.  
+* Everything needs to be encrypted at rest (at least passphrased)
+* There will be a passphrase database too.
+* Have to figure out how to use the cert fields.  We're going going to use them like they are for https -- there will be a lot of guids sitting where normal values for organizational unit and such are supposed to live.  DN will probably be the manufacturer id, possibily with the domain appended (where you can look up the server).  OU might be the server guid.
+

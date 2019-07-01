@@ -1,0 +1,25 @@
+Manufacturer-Id: c5ce9b8a-3cf1-4b50-b62c-7979d7d0edd7
+Manufacturer-Name: Thor's Brain Heavy Industries - Dangerous Products Division
+Domain: vrworlds.thorsbrain.com
+Root-Quantum: .1
+CA-Lead-Time: 5.0
+Signer-Lead-Time: .5
+Signers:
+  Services:
+    - Mongo:
+        Load: 1
+        Quantum: .5
+    - EtcD:
+        Load: 1
+        Quantum: .5
+    - Redis:
+        Load: 1
+        Quantum: .5
+  Infrastructure:
+    - Avatars:
+        Load: 200
+        Quantum: .25
+    - Servers:
+        Load: 20
+        Quantum: 1.0
+  
