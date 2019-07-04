@@ -1,6 +1,8 @@
 # VRWorlds-CA
 Certificate Authority for VRWorlds - For Raspberry PI, written in Python
 
+HSM on a budget?
+
  * Assure existence of encrypting certificates (must be heavily passphrased) 
    *  Ultimately we might only have this public key.  Though we probably have to sign something with the CA to prove we're who we say we are.   The Private key will be held by the main Kudo servers to be able to assimilate the archive we generate.
 * If not, then generate them.  Probably a big of a manual process to get this bootstrapped - though maybe this is a Kudo function.  We load the private key from the thumb drive and verify it's fingerprint or some such.
@@ -32,6 +34,7 @@ Raspberry Pi issues:
 * These are supposed to be air-gapped
 * Does air-gap mean we can't have an accurate clock - though our nature doesn't require too accurate a clock
 * Need to look at entropy/random number generator hardware
+* Should we look at using these FIDO Keys?
 
 Contents of Archive - encrypted by transfer public key:
 * Passphrase table - a different passphrase will be generated for each private key we generate - even if we've sent this private key before (new passphrases will be used each time).
@@ -50,7 +53,7 @@ Security Audit
   * How do we safely and securely back this up
     * Disaster recovery PKI stored offsite - keep list of public keys and
     * Trivially produce encrypted backups onto thumb drives for local and remote storage.   
-    * Deal with PiHDM loss due to hardware failure.
-    * Deal with PiHDM being compromised
+    * Deal with PiHSM loss due to hardware failure.
+    * Deal with PiHSM being compromised
     * Deal with backup being compromised
-    * Backups would have to include the CA private keys - perhaps this is simply a copy or serialization of the sqlite (or whatever) database (and possibily even the code).
+    * Backups would have to include the CA private keys - perhaps this is simply a copy or serialization of the sqlite (or whatever -- actually probably just a yaml file) database (and possibily even the code).
