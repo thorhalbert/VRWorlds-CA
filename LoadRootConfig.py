@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 
+import os
 import yaml
 
-def LoadRootConfig():
+def LoadRootConfig(prefix):
 
-    with open("RootConfig.yaml", 'r') as stream:
+    fName = 'RootConfig.yaml'
+    if prefix is not None:
+        fName = os.path.join(prefix, fName)
+
+    if not os.path.exists(fName):
+        print("Root Config: "+fName+" - does not exist")
+        exit(10)
+
+    with open(fName, 'r') as stream:
         try:
             config = yaml.safe_load(stream)
 
@@ -14,4 +23,4 @@ def LoadRootConfig():
 
             exit(10)
 
-    return null
+    return null  # Should not get here
