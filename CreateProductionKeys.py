@@ -10,11 +10,25 @@ import WorkQueue
 #          These are divided up into into an integer number of days
 #    if > 1, then this is still the fraction of year (but > 1 year).   2 is a max
 #
-#   Initially quantum will be set to a small number to force the rollover code to be tested heavily
+#   Initially quantum will be set to a small number to force the rollover code to be tested heavily.
 #
 #  load:
 #    number of signers to be made for each period.   The more signers, the fewer
 #    end-certificated would be invalidated if a signer must be revoked/repudiated
+#
+#  egress/backup:
+#   an output from the system.   This is encrypted via the provided public key so can only be
+#   read by the possesor of the private key.   Egress and backup are very similar, except that
+#   backup contains the root certs and the egress is not.  These will be tar files where every
+#   file containing passphrases or private keys is encrypted (which will be encrypted twice --
+#   once with a new unique passphrase, and also with the public key).  Unencrypted key files are
+#   never supposed to be written to disk.
+#
+#      Egress is intended to be shipped to a server which will assimilate it 
+#      Backup is for disaster recovery (loss of HSM or even forgetting the passphrase)
+#
+#   Any number of egress and/or backup archives can be made if their public keys are provided
+#   in the RootConfig.yaml file.
 
 prefixDir = '/usr/local/etc/vrworlds_ca'
 
@@ -22,7 +36,7 @@ prefixDir = '/usr/local/etc/vrworlds_ca'
 
 rootConfig = LoadRootConfig.LoadRootConfig(prefixDir)
 
-# Open the PickleDb for the passphrases
+# Open the PickleDb for the passphrases (encrypted with locking passphrase)
 
 passPhrases = ManagePassPhrases()
 
