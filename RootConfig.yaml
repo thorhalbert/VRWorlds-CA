@@ -22,4 +22,11 @@ Signers:
     - Servers:
         Load: 20
         Quantum: 1.0
-  
+Egresses:
+  - Main-Kudo:
+      Public-Key: egress-1_public_key.pem
+
+Backups:
+  - Main-Backup:
+      Public-Key: backup-1_public_key.pem
+
