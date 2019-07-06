@@ -3,3 +3,7 @@
 
 class ManagePassPhrases():
     pass
+
+ 
+    def AskForMasterLockPassphrase(self):
+        pass

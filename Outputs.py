@@ -2,7 +2,7 @@
 
 import abc
 
-
+# Abstract Class
 class Outputs(metaclass=abc.ABCMeta):
     pass
 

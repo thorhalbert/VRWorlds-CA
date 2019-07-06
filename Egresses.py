@@ -9,3 +9,6 @@ import Outputs
 
 class Egresses(Outputs.Outputs):
     pass
+
+    def __init__(self, *, rootConfig, workQueue):
+        pass

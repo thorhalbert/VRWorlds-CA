@@ -3,6 +3,7 @@
 from LoadRootConfig import LoadRootConfig
 from ManagePassPhrases import ManagePassPhrases
 from WorkQueue import WorkQueue
+import CertCreator
 from Egresses import Egresses
 from Backups import Backups
 
@@ -49,7 +50,7 @@ passPhrases.AskForMasterLockPassphrase()
 
 # Prepare the work list
 
-workQueue = WorkQueue(rootConfig, passPhrases)
+workQueue = WorkQueue(rootConfig= rootConfig, passPhrases= passPhrases)
 
 # Read the current certificate manifest
 
@@ -57,8 +58,8 @@ workQueue.AssimilateExistingCerts()
 
 # Create a directory for each of the egresses and the backups
 
-egresses = Egresses(rootConfig)
-backups = Backups(rootConfig)
+egresses = Egresses(rootConfig= rootConfig, workQueue=workQueue)
+backups = Backups(rootConfig= rootConfig, workQueue=workQueue)
 
 # Create a work entry for each cert which must be created, including root CAs.
 #    1.  Compute quantums and compare to existing certs.
