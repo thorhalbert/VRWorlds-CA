@@ -4,10 +4,12 @@
 
 
 class WorkQueue():
-    pass
+    rootConfig = None
+    passPhrases = None
 
     def __init__(self, *, rootConfig, passPhrases):
-        pass
+        self.rootConfig = rootConfig
+        self.passPhrases = passPhrases
 
     def AssimilateExistingCerts(self):
         pass

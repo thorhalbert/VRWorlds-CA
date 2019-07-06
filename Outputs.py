@@ -3,8 +3,15 @@
 import abc
 
 # Abstract Class
+
+
 class Outputs(metaclass=abc.ABCMeta):
-    pass
+    rootConfig = None
+    workQueue = None
+
+    def __init__(self, rootConfig, workQueue):
+        self.rootConfig = rootConfig
+        self.workQueue = workQueue
 
     def RecapitulateExistingCerts(self, workQueue):
         pass

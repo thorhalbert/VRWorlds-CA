@@ -11,12 +11,8 @@ import Outputs
 
 
 class Backups(Outputs.Outputs):
-    pass
-
     def __init__(self, *, rootConfig, workQueue):
-        pass
+        super(Backups, self).__init__(rootConfig, workQueue)
 
     def RecapitulateRootCerts(self):
         pass
-
- 

@@ -2,6 +2,7 @@
 
 import os
 import yaml
+from pprint import pprint
 
 
 def LoadRootConfig(prefix):
@@ -17,6 +18,10 @@ def LoadRootConfig(prefix):
     with open(fName, 'r') as stream:
         try:
             config = yaml.safe_load(stream)
+
+            config['Prefix'] = prefix
+
+            pprint(config)
 
             return config
         except yaml.YAMLError as exc:

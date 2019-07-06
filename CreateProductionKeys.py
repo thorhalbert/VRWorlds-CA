@@ -32,6 +32,8 @@ from Backups import Backups
 #
 #   Any number of egress and/or backup archives can be made if their public keys are provided
 #   in the RootConfig.yaml file.
+#
+#  Lead-Time - how far into the future should we create certs (future-dated certs)
 
 prefixDir = '/usr/local/etc/vrworlds_ca'
 
@@ -41,7 +43,7 @@ rootConfig = LoadRootConfig(prefixDir)
 
 # Open the PickleDb for the passphrases (encrypted with locking passphrase)
 
-passPhrases = ManagePassPhrases()
+passPhrases = ManagePassPhrases(rootConfig=rootConfig)
 
 # Prompt for the Locking Passphrase
 # validate the passphrase against the pickledb root entry (if any, or write new)
@@ -108,5 +110,6 @@ backups.GenerateLog()
 
 egresses.Close()
 backups.Close()
+passPhrases.Close()
 
 print("[Done]")
