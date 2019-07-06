@@ -3,6 +3,7 @@
 import os
 import yaml
 
+
 def LoadRootConfig(prefix):
 
     fName = 'RootConfig.yaml'
@@ -23,4 +24,4 @@ def LoadRootConfig(prefix):
 
             exit(10)
 
-    return null  # Should not get here
+    return None  # Should not get here

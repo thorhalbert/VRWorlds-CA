@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-import LoadRootConfig
-import ManagePassPhrases
-import WorkQueue
+from LoadRootConfig import LoadRootConfig
+from ManagePassPhrases import ManagePassPhrases
+from WorkQueue import WorkQueue
+from Egresses import Egresses
+from Backups import Backups
 
 # Terms:
 #  quantum:
@@ -24,7 +26,7 @@ import WorkQueue
 #   once with a new unique passphrase, and also with the public key).  Unencrypted key files are
 #   never supposed to be written to disk.
 #
-#      Egress is intended to be shipped to a server which will assimilate it 
+#      Egress is intended to be shipped to a server which will assimilate it
 #      Backup is for disaster recovery (loss of HSM or even forgetting the passphrase)
 #
 #   Any number of egress and/or backup archives can be made if their public keys are provided
@@ -34,7 +36,7 @@ prefixDir = '/usr/local/etc/vrworlds_ca'
 
 # Load the RootConfig.yaml
 
-rootConfig = LoadRootConfig.LoadRootConfig(prefixDir)
+rootConfig = LoadRootConfig(prefixDir)
 
 # Open the PickleDb for the passphrases (encrypted with locking passphrase)
 

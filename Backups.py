@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-
 # Create the encrypted backups
 
 
@@ -10,5 +9,9 @@
 
 import Outputs
 
+
 class Backups(Outputs.Outputs):
     pass
+
+    def RecapitulateRootCerts(self):
+        pass
