@@ -8,8 +8,17 @@ from pprint import pprint
 def LoadRootConfig(prefix):
 
     fName = 'RootConfig.yaml'
-    if prefix is not None:
-        fName = os.path.join(prefix, fName)
+
+    fName = os.path.join(prefix, fName)
+    certPath = os.path.join(prefix, 'certs')
+
+    if not os.path.exists(fName):
+        print("[Create: "+fName+"]")
+        os.mkdir(fName, 0o700)
+
+    if not os.path.exists(certPath):
+        print("[Create: "+certPath+"]")
+        os.mkdir(certPath, 0o700)
 
     if not os.path.exists(fName):
         print("Root Config: "+fName+" - does not exist")
@@ -20,6 +29,7 @@ def LoadRootConfig(prefix):
             config = yaml.safe_load(stream)
 
             config['Prefix'] = prefix
+            config['CertPath'] = certPath
 
             pprint(config)
 

@@ -18,12 +18,12 @@ class ManagePassPhrases():
         self.rootConfig = rootConfig
 
         picklePath = os.path.join(self.rootConfig['Prefix'], 'passDb.db')
-        print("PicklePath: "+picklePath)
+        #print("PicklePath: "+picklePath)
 
         self.phraseDb = pickledb.load(picklePath, False)
 
     def AskForMasterLockPassphrase(self):
-        self.passPhrase = input("Passphrase: ").strip()
+        self.passPhrase = input("\nPassphrase: ").strip()
 
         # generate a 32 byte AES key
         self.passKey = PBKDF2(
@@ -39,7 +39,7 @@ class ManagePassPhrases():
         # See if the phrase matches
         originalPassphrase = self.__readPassPhrase(self.helloUuid)
 
-        print("Phrases: ", originalPassphrase, self.passPhrase)
+        #print("Phrases: ", originalPassphrase, self.passPhrase)
         originalPassphrase = originalPassphrase.decode('utf-8')
         if originalPassphrase == self.passPhrase:
             print('[Passphrase Matches - Database Unlocked]')
@@ -51,29 +51,29 @@ class ManagePassPhrases():
         self.phraseDb.dump()
 
     def __setPassPhrase(self, uuid, phrase):
-        print("Key: ", self.passKey)
+        #print("Key: ", self.passKey)
         cipher = AES.new(self.passKey, AES.MODE_OCB)  # EAX mode doesn't work
         # cipher.update(b'header')
 
         plainText = bytes(phrase, encoding='utf-8')
 
-        print("PlainText: ", plainText)
+        #print("PlainText: ", plainText)
         ciphered_data, tag = cipher.encrypt_and_digest(plainText)
 
         nonce = cipher.nonce
-  
+
         #cipher = AES.new(self.passKey, AES.MODE_OCB, nonce=nonce)
         #newText = cipher.decrypt_and_verify(ciphered_data, tag)
 
-        print("Nonce=", nonce)
-        print("Tag=", tag)
-        print("Cypher=", ciphered_data)
+        #print("Nonce=", nonce)
+        #print("Tag=", tag)
+        #print("Cypher=", ciphered_data)
 
         #print("Verify=", newText)
 
         enList = b64encode(nonce).decode('utf-8') + '|' + b64encode(
             tag).decode('utf-8') + '|' + b64encode(ciphered_data).decode('utf-8')
-        #print(enList)
+        # print(enList)
 
         self.phraseDb.set(uuid, enList)
 
@@ -81,15 +81,15 @@ class ManagePassPhrases():
         decRaw = self.phraseDb.get(uuid)
 
         parts = decRaw.split('|')
-        print("Parts=",parts)
+        # print("Parts=",parts)
 
         nonce = bytes(b64decode(parts[0]))
         tag = bytes(b64decode(parts[1]))
         ciphered_data = bytes(b64decode(parts[2]))
 
-        print("Nonce=", nonce)
-        print("Tag=", tag)
-        print("Cypher=", ciphered_data)
+        #print("Nonce=", nonce)
+        #print("Tag=", tag)
+        #print("Cypher=", ciphered_data)
 
         # Decrypt and verify
         cipher = AES.new(self.passKey, AES.MODE_OCB, nonce=nonce)
