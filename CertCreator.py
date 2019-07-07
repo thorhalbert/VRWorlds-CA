@@ -14,9 +14,9 @@ def getYearMap(quantum, lead):
     # Let's enforce some limits (somewhat arbitrary)
 
     if quantum > 1.0:
-        quantum = 1.0    # for now
+        quantum = 1.0    # for now not allowing greater than 1 year
     if quantum < .05:
-        quantum = .05
+        quantum = .05    # Year into 20 slices
 
     if lead < .1:
         lead = .1
@@ -34,31 +34,36 @@ def getYearMap(quantum, lead):
 
     thisYear = datetime.date.fromtimestamp(time.time())
 
+    # loop through all possible years
     for endYear in range(0, rLead):
         start = datetime.datetime(thisYear.year+endYear, 1, 1)
         end = datetime.datetime(thisYear.year+endYear+1, 1, 1)
 
-        delta = (end - start).days
-        interval = int(1.0 / quantum)
+        # Compute from quantum the number of slices to make of year
 
-        days = int(delta / interval)
-        last = int(delta % interval)
+        delta = (end - start).days   # days in year
+        interval = int(1.0 / quantum)   # number of slices in a year
+
+        days = int(delta / interval)   # Number of days in a slice
+        last = int(delta % interval)   # Remainder for last slice
 
         # print("This: ", start, end, delta, interval, days, last)
 
+        # generate the slices
         for i in range(0, interval):
             startInterval = start + datetime.timedelta(days=i*days)
             if i < (interval - 1):
                 endInterval = startInterval + datetime.timedelta(days=days)
             else:
                 endInterval = startInterval + \
-                    datetime.timedelta(days=days+last)
+                    datetime.timedelta(
+                        days=days+last)   # add the remainder for last slice
 
             if endInterval < datetime.datetime.now():
-                continue
+                continue   # We never make certificates in the past
 
-            if startInterval > endFrame:   # not the whole year
-                continue
+            if startInterval > endFrame:
+                continue   # Don't make the certs after the lead time
 
             #print("   ", startInterval, endInterval)
             returns.append(startInterval)
@@ -67,5 +72,29 @@ def getYearMap(quantum, lead):
     return returns
 
 
+def checkExistingCert(certificates, start, end):
+    return start, end, 0
+
+
+def CreateCertificates(certificates, cType, name, quantum, load, lead, existing, s, e):
+    print("Create: "+cType+"/"+name, load-existing,s,e)
+    pass
+
+
 def FindCertificates(cType, name,  certificates, quantum, load, lead):
-    yearMap = getYearMap(quantum, lead)
+    # Compute the slice map from the quantum and the lead-time
+  
+    sliceMap = getYearMap(quantum, lead)
+    # print(sliceMap)
+
+    for i in range(0,len(sliceMap),2):
+        sliceStart = sliceMap[i]
+        sliceEnd = sliceMap[i+1]
+
+        s, e, existing = checkExistingCert(certificates, sliceStart, sliceEnd)
+
+        if s == None:
+            continue
+
+        CreateCertificates(certificates, cType, name, quantum,
+                          load, lead, existing, s, e)
