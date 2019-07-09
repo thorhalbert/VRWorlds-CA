@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 
 import time
+import uuid
 import datetime
+import Crypto
+
+#import SSL
+import os
+import random
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primatives import serialization
+from cryptography.hazmat.primatives.asymmetric import rsa
+
+from cryptography import X509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.backends import hashes
 
 
 def GenerateNewCerts(workQueue):
@@ -76,18 +90,97 @@ def checkExistingCert(certificates, start, end):
     return start, end, 0
 
 
-def CreateCertificates(certificates, cType, name, quantum, load, lead, existing, s, e):
-    print("Create: "+cType+"/"+name, load-existing,s,e)
-    pass
+def EnqueueCertificates(certificates, cType, name, quantum, load, lead, existing, s, e):
+    queued = {
+        'Enqueued': True,
+        'CertType': cType,
+        'CertClass': name,
+        'Quantum': float(quantum),
+        'Lead-Time': float(lead),
+        'Existing': int(existing),
+        'Load': int(load),
+        'Start': s,
+        'Stop': e
+    }
+
+    certificates.append(queued)
+
+
+def CreateCertificates(workQueue):
+    rootConfig = workQueue.rootConfig
+    locale = rootConfig['Locale']
+
+    for certToMake in workQueue.certificates:
+        if not 'Enqueued' in certToMake:
+            continue
+        if not certToMake['Enqueued']:
+            continue
+
+    print("Create: ", certToMake)
+
+    # Generate the private key
+
+    key = rsa.generate_private_key(
+        public_exponent=65537, key_size=4096, backend=default_backend)
+
+    k = Crypto.PKey()
+    k.generate_key(Crypto.TYPE_RSA, 4096)
+
+    # Pregenerate some important fields
+
+    serialnumber = random.getrandbits(64)
+
+    id = uuid.uuid4()
+
+    CN = str(id) + '@' + rootConfig['Domain']
+    O = rootConfig['Manufacturer-Id'] + '@' rootConfig['Domain']
+    OU = str(id) + ' / ' + \
+        certToMake['CertType'] + ' / ' + certToMake['CertClass']
+    C = locale['Country']
+    ST = locale['State']
+    L = locale['City']
+
+    # create the csr
+
+    # there will be a difference between the roots and the signers (intermediates)
+
+    subject = X509.Name([
+        X509.NameAttribute(NameOID.COUNTRY_NAME, C),
+        X509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, ST),
+        X509.NameAttribute(NameOID.LOCALITY_NAME, L),
+        X509.NameAttribute(NameOID.ORGANIZATION_NAME, O),
+        X509.NameAttribute(NameOID.ORGANIZATION_UNIT_NAME, OU),
+        X509.NameAttribute(NameOID.COMMON_NAME, CN)])
+
+    # There's probably several other fields here we can support, though maybe not for root
+    # or signers.  The Kudo servers can use them
+
+    csr = x509.CertificateSigningRequestBuilder()
+    .subject_name(subject)
+    .public_key(key.public_key)
+    .serial_number(serialnumber)
+    .not_valid_before(certToMake['Start'])
+    .not_valid_after(certToMake['Stop'])
+
+    # these need some extensions - not sure which yet
+    # one, for sure, is that they can sign for time-ranges outside of their span
+    # signing cert is the one that's valid for today, but it may be that the thing that's
+    # getting signed is somewhat in the future - this is about managing the CRLs
+
+    # Retreive the root (whichever span is currently valid), or self-sign
+
+    # if signing from root, retreive the issuer so it can be put on the csr
+
+    # Save the values (uncrypted) on the work-list
 
 
 def FindCertificates(cType, name,  certificates, quantum, load, lead):
     # Compute the slice map from the quantum and the lead-time
-  
+
     sliceMap = getYearMap(quantum, lead)
     # print(sliceMap)
 
-    for i in range(0,len(sliceMap),2):
+    for i in range(0, len(sliceMap), 2):
         sliceStart = sliceMap[i]
         sliceEnd = sliceMap[i+1]
 
@@ -96,5 +189,5 @@ def FindCertificates(cType, name,  certificates, quantum, load, lead):
         if s == None:
             continue
 
-        CreateCertificates(certificates, cType, name, quantum,
-                          load, lead, existing, s, e)
+        EnqueueCertificates(certificates, cType, name, quantum,
+                            load, lead, existing, s, e)

@@ -4,6 +4,7 @@ import os
 import yaml
 from pprint import pprint
 
+# Eventually need a schema for list of mandatory fields, and possibly field type checking
 
 def LoadRootConfig(prefix):
 

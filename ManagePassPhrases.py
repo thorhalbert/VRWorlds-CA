@@ -62,6 +62,8 @@ class ManagePassPhrases():
 
         nonce = cipher.nonce
 
+        # test that we can decrypt
+
         #cipher = AES.new(self.passKey, AES.MODE_OCB, nonce=nonce)
         #newText = cipher.decrypt_and_verify(ciphered_data, tag)
 

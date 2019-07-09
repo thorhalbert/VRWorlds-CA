@@ -1,6 +1,10 @@
 Manufacturer-Id: c5ce9b8a-3cf1-4b50-b62c-7979d7d0edd7
 Manufacturer-Name: Thor's Brain Heavy Industries - Dangerous Products Division
 Domain: vrworlds.thorsbrain.com
+Locale:
+  Country: Virtualia
+  State: Thorsbrain
+  City: Tardis-Type64V
 Root-Quantum: .1
 CA-Lead-Time: 5.0
 Signer-Lead-Time: .5
