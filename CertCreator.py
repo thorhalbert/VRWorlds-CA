@@ -10,16 +10,16 @@ import os
 import random
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primatives import serialization
-from cryptography.hazmat.primatives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from cryptography import X509
+from cryptography import x509
 from cryptography.x509.oid import NameOID
-from cryptography.hazmat.backends import hashes
+from cryptography.hazmat.backends.openssl import hashes
 
 
-def GenerateNewCerts(workQueue):
-    pass
 
 
 def getYearMap(quantum, lead):
@@ -105,8 +105,7 @@ def EnqueueCertificates(certificates, cType, name, quantum, load, lead, existing
 
     certificates.append(queued)
 
-
-def CreateCertificates(workQueue):
+def GenerateNewCerts(workQueue):
     rootConfig = workQueue.rootConfig
     locale = rootConfig['Locale']
 
@@ -118,13 +117,12 @@ def CreateCertificates(workQueue):
 
     print("Create: ", certToMake)
 
-    # Generate the private key
+    # Generate the private key (Elliptical 25519 - don't use RSA)
 
-    key = rsa.generate_private_key(
-        public_exponent=65537, key_size=4096, backend=default_backend)
+    key = Ed25519PrivateKey.generate()
 
-    k = Crypto.PKey()
-    k.generate_key(Crypto.TYPE_RSA, 4096)
+    #k = Crypto.PKey()
+    #k.generate_key(Crypto.TYPE_, 4096)
 
     # Pregenerate some important fields
 
@@ -133,7 +131,7 @@ def CreateCertificates(workQueue):
     id = uuid.uuid4()
 
     CN = str(id) + '@' + rootConfig['Domain']
-    O = rootConfig['Manufacturer-Id'] + '@' rootConfig['Domain']
+    O = rootConfig['Manufacturer-Id'] + '@' + rootConfig['Domain']
     OU = str(id) + ' / ' + \
         certToMake['CertType'] + ' / ' + certToMake['CertClass']
     C = locale['Country']
@@ -144,23 +142,23 @@ def CreateCertificates(workQueue):
 
     # there will be a difference between the roots and the signers (intermediates)
 
-    subject = X509.Name([
-        X509.NameAttribute(NameOID.COUNTRY_NAME, C),
-        X509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, ST),
-        X509.NameAttribute(NameOID.LOCALITY_NAME, L),
-        X509.NameAttribute(NameOID.ORGANIZATION_NAME, O),
-        X509.NameAttribute(NameOID.ORGANIZATION_UNIT_NAME, OU),
-        X509.NameAttribute(NameOID.COMMON_NAME, CN)])
+    subject = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, C),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, ST),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, L),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, O),
+        x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, OU),
+        x509.NameAttribute(NameOID.COMMON_NAME, CN)])
 
     # There's probably several other fields here we can support, though maybe not for root
     # or signers.  The Kudo servers can use them
 
-    csr = x509.CertificateSigningRequestBuilder()
-    .subject_name(subject)
-    .public_key(key.public_key)
-    .serial_number(serialnumber)
-    .not_valid_before(certToMake['Start'])
-    .not_valid_after(certToMake['Stop'])
+    csr = x509.CertificateBuilder()   \
+        .subject_name(subject) \
+        .public_key(key.public_key())   \
+        .serialnumber(serialnumber )    \
+        .not_valid_before(certToMake['Start'])  \
+        .not_valid_after(certToMake['Stop'])
 
     # these need some extensions - not sure which yet
     # one, for sure, is that they can sign for time-ranges outside of their span
