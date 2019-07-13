@@ -230,12 +230,12 @@ def __generateCert(certToMake, workQueue):
     certToMake['Persisted'] = False
     certToMake['Enqueued'] = False
 
-    fn = certToMake['CertType'] + '-'
-    fn += str(id) + ".pem"
-    fn = fn.replace('/','_')
+    #fn = certToMake['CertType'] + '-'
+    #fn += str(id) + ".pem"
+    #fn = fn.replace('/','_')
 
-    with open(fn, "wb") as f:
-        f.write(certificate.public_bytes(serialization.Encoding.PEM))
+    # with open(fn, "wb") as f:
+    #    f.write(certificate.public_bytes(serialization.Encoding.PEM))
 
 
 def FindCertificates(cType, name,  certificates, quantum, load, lead):
