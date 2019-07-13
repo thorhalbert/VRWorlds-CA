@@ -1,6 +1,8 @@
 # VRWorlds-CA
 Certificate Authority for VRWorlds - For Raspberry PI, written in Python
 
+## Warning - I am not a crypto expert.  This code might burn your bacon and flood your basement and expose your treasure to pirates...  Please learn what you can about this subject and check me.  USE AT YOUR OWN RISK!
+
 HSM on a budget?
 
  * Assure existence of encrypting certificates (must be heavily passphrased) 
