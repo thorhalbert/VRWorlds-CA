@@ -12,6 +12,7 @@ class WorkQueue():
     signers_Services = []
     signers_Infrastructure = []
 
+    root_certificates = []
     certificates = []
 
     def __init__(self, *, rootConfig, passPhrases):
@@ -33,7 +34,7 @@ class WorkQueue():
         self.CA_Quantum = float(self.rootConfig['Root-Quantum'])
 
         CertCreator.FindCertificates(
-            'CA', 'Root', self.certificates, self.CA_Quantum, 1, self.CA_Lead)
+            'CA', 'Root', self.root_certificates, self.CA_Quantum, 1, self.CA_Lead)
 
     def __findSigners(self):
         self.Signer_Lead = float(self.rootConfig['Signer-Lead-Time'])

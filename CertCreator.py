@@ -20,8 +20,6 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.backends.openssl import hashes
 
 
-
-
 def getYearMap(quantum, lead):
     returns = []
 
@@ -105,9 +103,15 @@ def EnqueueCertificates(certificates, cType, name, quantum, load, lead, existing
 
     certificates.append(queued)
 
+
 def GenerateNewCerts(workQueue):
-    rootConfig = workQueue.rootConfig
-    locale = rootConfig['Locale']
+    for certToMake in workQueue.root_certificates:
+        if not 'Enqueued' in certToMake:
+            continue
+        if not certToMake['Enqueued']:
+            continue
+
+        __generateCert(certToMake, workQueue)
 
     for certToMake in workQueue.certificates:
         if not 'Enqueued' in certToMake:
@@ -115,11 +119,25 @@ def GenerateNewCerts(workQueue):
         if not certToMake['Enqueued']:
             continue
 
+        __generateCert(certToMake, workQueue)
+
+
+def __generateCert(certToMake, workQueue):
+
+    rootConfig = workQueue.rootConfig
+    locale = rootConfig['Locale']
+
     print("Create: ", certToMake)
 
     # Generate the private key (Elliptical 25519 - don't use RSA)
 
-    key = Ed25519PrivateKey.generate()
+    # key = Ed25519PrivateKey.generate()
+
+    key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+        backend=default_backend()
+    )
 
     #k = Crypto.PKey()
     #k.generate_key(Crypto.TYPE_, 4096)
@@ -156,7 +174,7 @@ def GenerateNewCerts(workQueue):
     csr = x509.CertificateBuilder()   \
         .subject_name(subject) \
         .public_key(key.public_key())   \
-        .serialnumber(serialnumber )    \
+        .serial_number(serialnumber)    \
         .not_valid_before(certToMake['Start'])  \
         .not_valid_after(certToMake['Stop'])
 
