@@ -11,8 +11,13 @@ import Outputs
 
 
 class Backups(Outputs.Outputs):
-    def __init__(self, *, rootConfig, workQueue):
-        super(Backups, self).__init__(rootConfig, workQueue)
+    def __init__(self, *, rootConfig, workQueue, key, output):
+        super(Backups, self).__init__(rootConfig, workQueue, key, output)
+
+        self.outputs = rootConfig['Backups']
+        self.writePrivateKey = True
 
     def RecapitulateRootCerts(self):
         pass
+
+   

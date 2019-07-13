@@ -4,6 +4,7 @@ import time
 import uuid
 import datetime
 import Crypto
+import base64
 
 # import SSL
 import os
@@ -92,6 +93,7 @@ def checkExistingCert(certificates, start, end):
 
 def EnqueueCertificates(certificates, cType, name, quantum, load, lead, existing, s, e):
     queued = {
+        'Target': name,
         'Enqueued': True,
         'CertType': cType,
         'CertClass': name,
@@ -155,6 +157,9 @@ def __generateCert(certToMake, workQueue):
     serialnumber = random.getrandbits(64)
 
     id = uuid.uuid4()
+
+    certToMake['Id'] = str(id)
+    certToMake['SerialNumber'] = serialnumber
 
     CN = str(id) + '@' + rootConfig['Domain']
     O = rootConfig['Manufacturer-Id'] + '@' + rootConfig['Domain']
@@ -255,3 +260,69 @@ def FindCertificates(cType, name,  certificates, quantum, load, lead):
 
         EnqueueCertificates(certificates, cType, name, quantum,
                             load, lead, existing, s, e)
+
+
+def GenPassphrase():
+    phrase = os.urandom(64)
+    return str(uuid.uuid4()), phrase, base64.b64encode(phrase).decode('utf-8')
+
+
+def ExportCerts(key, output, queue, writePriv):
+    print("[Output "+key+'] ')
+
+    for cert in queue:
+        # the passphrase uuid id is not actually written to the cert, just the manifest
+        
+        manifestEntry = {
+            'Id': cert['Id'],
+            'CertInfo': {
+                'Cert-Class': cert['CertClass'],
+                'Cert-Type': cert['CertType'],
+                'Target': cert['Target'],
+                'Lead-Time': cert['Lead-Time'],
+                'Load': cert['Load'],
+                'Quantum': cert['Quantum'],
+                'Valid-From': cert['Start'],
+                'Valid-To': cert['Stop']
+            }
+        }
+
+        fnb = cert['CertType'] + '-' + cert['Id']
+        fnb = fnb.replace('/', '_')
+        fn = fnb + ".pem"
+
+        manifestEntry['CertificateFile'] = fn
+
+        fnm = os.path.join(output.Tmp, fn)
+        print('[Write: '+fnm+']')
+        with open(fnm, "wb") as f:
+            f.write(cert['Certificate'].public_bytes(
+                serialization.Encoding.PEM))
+
+        if writePriv:
+            # Get the random passphrase we're going to encrypt the private key with
+            phraseKey, phraseBytes, phraseEnc = GenPassphrase()
+
+            fn = fnb + "_key.pem"
+
+            manifestEntry['PhraseKey'] = phraseKey
+
+            manifestEntry['PrivateKeyFile'] = fn
+
+            # Build the passphrase table - this is not encrypted in memory
+            output.PassPhrases.append({
+                'Key': phraseKey,
+                'PhraseEnc': phraseEnc
+            })
+
+            fnm = os.path.join(output.Tmp, fn)
+
+            with open(fnm, "wb") as f:
+                f.write(cert['PrivateKey'].private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.TraditionalOpenSSL,
+                    encryption_algorithm=serialization.BestAvailableEncryption(
+                        phraseBytes),
+                ))
+
+        output.Manifest.append(manifestEntry)

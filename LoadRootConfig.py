@@ -43,11 +43,15 @@ def __procConfig(config):
             for key in obj:
                 __procWorkDir(obj, key, egresses)
                 egress_count += 1
+    else:
+        config['Egresses'] = []
 
     if 'Backups' in config:
         for obj in config['Backups']:
             for key in obj:
                 __procWorkDir(obj, key, backups)
+    else:
+        config['Backups'] = []
 
     # Asserts
 

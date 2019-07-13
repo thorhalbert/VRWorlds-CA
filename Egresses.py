@@ -8,5 +8,9 @@ import Outputs
 
 
 class Egresses(Outputs.Outputs):
-    def __init__(self, *, rootConfig, workQueue):
-        super(Egresses, self).__init__(rootConfig, workQueue)
+ 
+    def __init__(self, *, rootConfig, workQueue, key, output):
+        super(Egresses, self).__init__(rootConfig, workQueue, key, output)
+
+        self.writePrivateKey = False
+        self.outputs = rootConfig['Egresses']

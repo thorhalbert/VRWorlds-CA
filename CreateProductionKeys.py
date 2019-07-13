@@ -52,16 +52,12 @@ passPhrases.AskForMasterLockPassphrase()
 
 # Prepare the work list
 
-workQueue = WorkQueue(rootConfig= rootConfig, passPhrases= passPhrases)
+workQueue = WorkQueue(rootConfig=rootConfig, passPhrases=passPhrases)
 
 # Read the current certificate manifest
 
 workQueue.AssimilateExistingCerts()
 
-# Create a directory for each of the egresses and the backups
-
-egresses = Egresses(rootConfig= rootConfig, workQueue=workQueue)
-backups = Backups(rootConfig= rootConfig, workQueue=workQueue)
 
 # Create a work entry for each cert which must be created, including root CAs.
 #    1.  Compute quantums and compare to existing certs.
@@ -79,9 +75,8 @@ workQueue.DiscoverAllNewWork()
 #  5.  Encrypt all (including root certs) to backup public key and write
 #  6.  Add to manifest
 
-egresses.RecapitulateExistingCerts(workQueue)
-backups.RecapitulateRootCerts()   # Egress doesn't get this
-backups.RecapitulateExistingCerts(workQueue)
+workQueue.RecapitulateRootCerts()
+workQueue.RecapitulateExistingCerts()
 
 # Go through queue for new certs
 #  Generate new pub/pri key and csr and make a new cert
@@ -89,27 +84,22 @@ backups.RecapitulateExistingCerts(workQueue)
 #  Do pretty much 1-6 of previous step for new certs
 
 CertCreator.GenerateNewCerts(workQueue)
-egresses.ExportNewCerts(workQueue)
-backups.ExportNewCerts(workQueue)
+
+workQueue.ExportCerts()
 
 # Write out the encrypted passphrases
 
-egresses.ExportPassphrases(workQueue)
-backups.ExportPassphrases(workQueue)
+workQueue.ExportPassPhrases()
 
 # Write out manifest
 
-workQueue.GenerateLog()
-
-# Write out log to each of the outputs
-
-egresses.GenerateLog()
-backups.GenerateLog()
+workQueue.ExportManifest()
 
 # finish
 
-egresses.Close()
-backups.Close()
+workQueue.Close()
+# egresses.Close()
+# backups.Close()
 passPhrases.Close()
 
 print("[Done]")

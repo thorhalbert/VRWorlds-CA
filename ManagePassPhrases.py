@@ -2,6 +2,8 @@
 
 import os
 import pickledb
+import uuid
+
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
 from base64 import b64encode, b64decode
@@ -13,6 +15,9 @@ class ManagePassPhrases():
     passPhrase = None
     phraseSalt = b'N\xe10\xae|\xbe(HB\xe3\xba\xd6SSA\xb5\xc6x\xc38\x04\xab\x9b\x8fi6\xbe\xba\xea3\xb8\xf7'
     passKey = None
+
+    genList = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    genLen = 48
 
     def __init__(self, *, rootConfig):
         self.rootConfig = rootConfig
@@ -101,3 +106,6 @@ class ManagePassPhrases():
         original_data = cipher.decrypt_and_verify(ciphered_data, tag)
 
         return original_data
+
+
+        
