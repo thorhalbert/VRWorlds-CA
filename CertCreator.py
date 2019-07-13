@@ -5,7 +5,7 @@ import uuid
 import datetime
 import Crypto
 
-#import SSL
+# import SSL
 import os
 import random
 
@@ -17,7 +17,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from cryptography import x509
 from cryptography.x509.oid import NameOID
-from cryptography.hazmat.backends.openssl import hashes
+from cryptography.hazmat.primitives import hashes
+
+from pprint import pprint
 
 
 def getYearMap(quantum, lead):
@@ -42,7 +44,7 @@ def getYearMap(quantum, lead):
 
     # Don't process certs requests starting after this date
     endFrame = datetime.datetime.fromtimestamp(time.time() + (366*lead*86400))
-    #print("EndFrame=", endFrame)
+    # print("EndFrame=", endFrame)
 
     thisYear = datetime.date.fromtimestamp(time.time())
 
@@ -77,7 +79,7 @@ def getYearMap(quantum, lead):
             if startInterval > endFrame:
                 continue   # Don't make the certs after the lead time
 
-            #print("   ", startInterval, endInterval)
+            # print("   ", startInterval, endInterval)
             returns.append(startInterval)
             returns.append(endInterval)
 
@@ -127,7 +129,11 @@ def __generateCert(certToMake, workQueue):
     rootConfig = workQueue.rootConfig
     locale = rootConfig['Locale']
 
-    print("Create: ", certToMake)
+    # See if we're root and see if we're current root
+    iAmRoot = (certToMake['CertClass'] == 'Root')
+    if iAmRoot:
+        if certToMake['Start'] < datetime.datetime.utcnow() < certToMake['Stop']:
+            workQueue.current_root = certToMake
 
     # Generate the private key (Elliptical 25519 - don't use RSA)
 
@@ -139,8 +145,10 @@ def __generateCert(certToMake, workQueue):
         backend=default_backend()
     )
 
-    #k = Crypto.PKey()
-    #k.generate_key(Crypto.TYPE_, 4096)
+    certToMake['PrivateKey'] = key
+
+    # k = Crypto.PKey()
+    # k.generate_key(Crypto.TYPE_, 4096)
 
     # Pregenerate some important fields
 
@@ -155,6 +163,9 @@ def __generateCert(certToMake, workQueue):
     C = locale['Country']
     ST = locale['State']
     L = locale['City']
+
+    print("Create: "+OU)
+    # pprint(certToMake)
 
     # create the csr
 
@@ -171,23 +182,60 @@ def __generateCert(certToMake, workQueue):
     # There's probably several other fields here we can support, though maybe not for root
     # or signers.  The Kudo servers can use them
 
+    path = 1
+    if iAmRoot:
+        path = 0    # root ca appearently has a path of 0
+
     csr = x509.CertificateBuilder()   \
         .subject_name(subject) \
         .public_key(key.public_key())   \
         .serial_number(serialnumber)    \
         .not_valid_before(certToMake['Start'])  \
-        .not_valid_after(certToMake['Stop'])
+        .not_valid_after(certToMake['Stop']) \
+        .add_extension(x509.BasicConstraints(ca=True, path_length=path), True) \
+        .add_extension(x509.KeyUsage(
+            digital_signature=True,
+            content_commitment=True,
+            key_encipherment=False,
+            data_encipherment=False,
+            key_agreement=False,
+            key_cert_sign=True,
+            crl_sign=True,
+            encipher_only=False,
+            decipher_only=False), True)
 
-    # these need some extensions - not sure which yet
-    # one, for sure, is that they can sign for time-ranges outside of their span
-    # signing cert is the one that's valid for today, but it may be that the thing that's
-    # getting signed is somewhat in the future - this is about managing the CRLs
+    private_key = key   # assume self signed for CA (not current root)
+    if not iAmRoot:
+        if workQueue.current_root is None:
+            print("Cannot find the current root cert")
+            exit(10)
 
-    # Retreive the root (whichever span is currently valid), or self-sign
+        root = workQueue.current_root
+        # print("Issuer: ",root['CSR'])
+        # pprint(root)
+        csr = csr.issuer_name(root['Certificate'].issuer)
 
-    # if signing from root, retreive the issuer so it can be put on the csr
+        # intermediates (even futuredated) must be signed by CURRENT root
+        private_key = root['PrivateKey']
+    else:
+        csr = csr.issuer_name(subject)
+
+    certificate = csr.sign(
+        private_key=private_key, algorithm=hashes.SHA256(),
+        backend=default_backend())
 
     # Save the values (uncrypted) on the work-list
+
+    certToMake['Certificate'] = certificate
+    certToMake['Persisted'] = False
+    certToMake['Enqueued'] = False
+
+    fn = certToMake['CertType'] + '-'
+    fn += str(id) + ".pem"
+    fn = fn.replace('/','_')
+
+    with open(fn, "wb") as f:
+        f.write(certificate.public_bytes(serialization.Encoding.PEM))
 
 
 def FindCertificates(cType, name,  certificates, quantum, load, lead):

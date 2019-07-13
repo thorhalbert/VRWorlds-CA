@@ -15,6 +15,8 @@ class WorkQueue():
     root_certificates = []
     certificates = []
 
+    current_root = None
+
     def __init__(self, *, rootConfig, passPhrases):
         self.rootConfig = rootConfig
         self.passPhrases = passPhrases
