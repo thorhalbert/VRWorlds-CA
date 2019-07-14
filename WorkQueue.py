@@ -137,18 +137,12 @@ class WorkQueue():
             else:
                 self.certificates.append(certEntry)
 
-                certKey = info['Cert-Class']+'/'+info['Target']
+                certKey = info['Cert-Type']+'/'+info['Target']
                 if certKey not in self.cert_last:
                     self.cert_last[certKey] = datetime.datetime(1900, 1, 1)
 
                 if info['Valid-To'] > self.cert_last[certKey]:
                     self.cert_last[certKey] = info['Valid-To']
-
-        print(self.root_cert_last)
-        pprint(self.cert_last)
-
-        print("Got it")
-        exit(10)
 
     def DiscoverAllNewWork(self):
         self.__findCAWork()
@@ -161,8 +155,12 @@ class WorkQueue():
         self.CA_Lead = float(self.rootConfig['CA-Lead-Time'])
         self.CA_Quantum = float(self.rootConfig['Root-Quantum'])
 
+        rootDates = {
+            'CA/Root': self.root_cert_last
+        }
+
         CertCreator.FindCertificates(
-            'CA', 'Root', self.root_certificates, self.CA_Quantum, 1, self.CA_Lead)
+            'CA', 'Root', self.root_certificates, self.CA_Quantum, 1, self.CA_Lead, rootDates)
 
     def __findSigners(self):
         self.Signer_Lead = float(self.rootConfig['Signer-Lead-Time'])
@@ -193,7 +191,7 @@ class WorkQueue():
                     quantum = float(setup['Quantum'])
 
                 CertCreator.FindCertificates(
-                    fType, name, self.certificates, quantum, load, self.Signer_Lead)
+                    fType, name, self.certificates, quantum, load, self.Signer_Lead, self.cert_last)
 
     def RecapitulateRootCerts(self):
         # rewrite all previous root certs with new passphrase
@@ -290,7 +288,7 @@ class WorkQueue():
     def __persistCerts(self, certList, manifest, passphrases, outputDir):
 
         passphrases.extend(CertCreator.ExportCerts(
-            "Main Persistence", outputDir, manifest, certList, True))
+            "Main Persistence", outputDir, manifest, certList, True, True))
 
     def Close(self):
         for egress in self.egresses:

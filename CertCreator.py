@@ -87,11 +87,26 @@ def getYearMap(quantum, lead):
     return returns
 
 
-def checkExistingCert(certificates, start, end):
-    return start, end, 0
+def checkExistingCert(certificates, start, end, last_date):
+    # We never create certs in the past (at least for now)
+    if end < datetime.datetime.utcnow():
+        return None, None
+
+    # This cert type is covered up to this date
+    if end <= last_date:
+        return None, None
+
+    # We may need to generate a truncated cert if the quantum changed
+    if start < last_date:
+        print("Making truncated range: ", start, end, last_date)
+        exit(10)
+        return last_date, end
+
+    # These dates are clear
+    return start, end
 
 
-def EnqueueCertificates(certList, cType, name, quantum, load, lead, existing, s, e):
+def EnqueueCertificates(certList, cType, name, quantum, load, lead, s, e):
     queued = {
         'Target': name,
         'Enqueued': True,
@@ -99,7 +114,6 @@ def EnqueueCertificates(certList, cType, name, quantum, load, lead, existing, s,
         'CertClass': name,
         'Quantum': float(quantum),
         'Lead-Time': float(lead),
-        'Existing': int(existing),
         'Load': int(load),
         'Start': s,
         'Stop': e
@@ -239,7 +253,7 @@ def __generateCert(certToMake, workQueue):
     certToMake['Enqueued'] = False
 
 
-def FindCertificates(cType, name,  certList, quantum, load, lead):
+def FindCertificates(cType, name,  certList, quantum, load, lead, last_dates):
     # Compute the slice map from the quantum and the lead-time
 
     sliceMap = getYearMap(quantum, lead)
@@ -249,13 +263,15 @@ def FindCertificates(cType, name,  certList, quantum, load, lead):
         sliceStart = sliceMap[i]
         sliceEnd = sliceMap[i+1]
 
-        s, e, existing = checkExistingCert(certList, sliceStart, sliceEnd)
+        key = cType + '/' + name
+        s, e = checkExistingCert(certList, sliceStart,
+                                 sliceEnd, last_dates[key])
 
         if s == None:
             continue
 
         EnqueueCertificates(certList, cType, name, quantum,
-                            load, lead, existing, s, e)
+                            load, lead, s, e)
 
 
 def GenPassphrase():
@@ -263,12 +279,16 @@ def GenPassphrase():
     return str(uuid.uuid4()), phrase, base64.b64encode(phrase).decode('utf-8')
 
 
-def ExportCerts(key, outputDir, manifest, queue, writePriv):
+def ExportCerts(key, outputDir, manifest, queue, writePriv, obeyPersist):
     print("[Output "+key+'] ')
 
     newPassPhrases = []
 
     for cert in queue:
+        if obeyPersist:
+            if cert['Persisted']:
+                continue
+
         # the passphrase uuid id is not actually written to the cert, just the manifest
 
         manifestEntry = {
@@ -328,7 +348,6 @@ def ExportCerts(key, outputDir, manifest, queue, writePriv):
             newPassPhrases.append(passEntry)
 
         manifest.append(manifestEntry)
-        
-    return newPassPhrases
+        cert['Persisted'] = True
 
-       
+    return newPassPhrases
