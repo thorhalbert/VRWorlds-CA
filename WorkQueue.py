@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+import os
+import yaml
+import time
+
 import Egresses
 import Backups
 import CertCreator
@@ -152,6 +156,37 @@ class WorkQueue():
 
             backupObj = self.backups[backup]
             backupObj.GenerateTarFile()
+
+    def PersistLocalCerts(self):
+        # Write out all files, including existing ones with new passphrases
+
+        manifest = []
+        passphrases = []
+
+        outputDir = self.rootConfig['CertPath']
+
+        self.__persistCerts(self.root_certificates,
+                            manifest, passphrases, outputDir)
+        self.__persistCerts(self.certificates, manifest,
+                            passphrases, outputDir)
+
+        # Store the passphrases in pickledb encrypted and write the manifest out
+        # Need to insulate against errors, like out of disk
+
+        self.passPhrases.ProcessNewPhrases(passphrases)
+
+        # We should read in the encrypted pickledb and make a timestamped dump of it
+
+        # Output the current manifest and make a timestamped backup of same
+        for file in ['manifest.yaml', 'manifest-'+time.strftime('%Y%m%d-%H%M%S')+'.yaml']:
+            man = os.path.join(outputDir, file)
+            with open(man, 'w') as yaml_file:
+                yaml.dump(manifest, yaml_file, default_flow_style=False)
+
+    def __persistCerts(self, certList, manifest, passphrases, outputDir):
+
+        passphrases.extend(CertCreator.ExportCerts(
+            "Main Persistence", outputDir, manifest, certList, True))
 
     def Close(self):
         for egress in self.egresses:

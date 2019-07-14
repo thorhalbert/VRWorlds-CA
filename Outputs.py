@@ -147,7 +147,8 @@ class Outputs(metaclass=abc.ABCMeta):
         shutil.rmtree(self.Tmp)
 
     def _exportCerts(self, queue, writePriv):
-        CertCreator.ExportCerts(self.key, self, self.Manifest, queue, writePriv)
+        self.PassPhrases.extend(  CertCreator.ExportCerts(self.key, self.Tmp, self.Manifest, queue, writePriv))
+     
 
     def __addFile(self, tar, file):
         real = os.path.join(self.Tmp, file)

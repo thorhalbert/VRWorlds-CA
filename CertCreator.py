@@ -262,8 +262,10 @@ def GenPassphrase():
     return str(uuid.uuid4()), phrase, base64.b64encode(phrase).decode('utf-8')
 
 
-def ExportCerts(key, output, manifest, queue, writePriv):
+def ExportCerts(key, outputDir, manifest, queue, writePriv):
     print("[Output "+key+'] ')
+
+    newPassPhrases = []
 
     for cert in queue:
         # the passphrase uuid id is not actually written to the cert, just the manifest
@@ -288,11 +290,13 @@ def ExportCerts(key, output, manifest, queue, writePriv):
 
         manifestEntry['CertificateFile'] = fn
 
-        fnm = os.path.join(output.Tmp, fn)
+        fnm = os.path.join(outputDir, fn)
         print('[Write: '+fnm+']')
         with open(fnm, "wb") as f:
             f.write(cert['Certificate'].public_bytes(
                 serialization.Encoding.PEM))
+
+        passEntry = None
 
         if writePriv:
             # Get the random passphrase we're going to encrypt the private key with
@@ -305,12 +309,12 @@ def ExportCerts(key, output, manifest, queue, writePriv):
             manifestEntry['PrivateKeyFile'] = fn
 
             # Build the passphrase table - this is not encrypted in memory
-            output.PassPhrases.append({
+            passEntry = {
                 'Key': phraseKey,
-                'PhraseEnc': phraseEnc
-            })
+                'PhraseBytes': phraseBytes   # Yaml does fine with bytes
+            }
 
-            fnm = os.path.join(output.Tmp, fn)
+            fnm = os.path.join(outputDir, fn)
 
             with open(fnm, "wb") as f:
                 f.write(cert['PrivateKey'].private_bytes(
@@ -320,5 +324,10 @@ def ExportCerts(key, output, manifest, queue, writePriv):
                         phraseBytes),
                 ))
 
+            newPassPhrases.append(passEntry)
+
         manifest.append(manifestEntry)
         
+    return newPassPhrases
+
+       

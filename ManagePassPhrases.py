@@ -55,12 +55,15 @@ class ManagePassPhrases():
     def Close(self):
         self.phraseDb.dump()
 
-    def __setPassPhrase(self, uuid, phrase):
+    def __setPassPhrase(self, uuid, phrase, phraseBytes=None):
         #print("Key: ", self.passKey)
         cipher = AES.new(self.passKey, AES.MODE_OCB)  # EAX mode doesn't work
         # cipher.update(b'header')
 
-        plainText = bytes(phrase, encoding='utf-8')
+        if phraseBytes is None:
+            plainText = bytes(phrase, encoding='utf-8')
+        else:
+            plainText = phraseBytes
 
         #print("PlainText: ", plainText)
         ciphered_data, tag = cipher.encrypt_and_digest(plainText)
@@ -107,5 +110,8 @@ class ManagePassPhrases():
 
         return original_data
 
-
+    def ProcessNewPhrases(self, passphrases):
+        # Encrypt all of our new passphrases with our startup passphrase key
+        for phrase in passphrases:
+            self.__setPassPhrase(phrase['Key'],None,phraseBytes=phrase['PhraseBytes'])
         

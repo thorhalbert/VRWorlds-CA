@@ -95,9 +95,12 @@ workQueue.ExportPassPhrases()
 
 workQueue.ExportManifest()
 
-# finish
+# finish up - write final product and persist new certs
 
 workQueue.ExportTarFile()
+workQueue.PersistLocalCerts()
+
+# Close out
 
 workQueue.Close()
 # egresses.Close()
