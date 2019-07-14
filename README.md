@@ -2,7 +2,7 @@
 
 Certificate Authority for VRWorlds - For Raspberry PI, written in Python.  This program manages the root certificates and the intermediate signers.  The Kudo server actually handles signing.
 
-This is now feature-complete.  Though it needs a lot more testing, and it needs more error remidation and disaster recovery.  Loosing the private key for your root cert, for example, is a disaster.
+This is now feature-complete.  Though it needs a lot more testing, and it needs more error remedation and disaster recovery.  Loosing the private key for your root cert, for example, is a disaster.
 
 ## Warning - I am not a cryptography expert.  Just assume this code will burn your bacon, flood your basement and expose your treasure to pirates...  Please learn what you can about crypto and check me
 
