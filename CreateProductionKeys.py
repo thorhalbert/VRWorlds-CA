@@ -97,6 +97,8 @@ workQueue.ExportManifest()
 
 # finish
 
+workQueue.ExportTarFile()
+
 workQueue.Close()
 # egresses.Close()
 # backups.Close()

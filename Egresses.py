@@ -10,7 +10,6 @@ import Outputs
 class Egresses(Outputs.Outputs):
  
     def __init__(self, *, rootConfig, workQueue, key, output):
-        super(Egresses, self).__init__(rootConfig, workQueue, key, output)
+        super(Egresses, self).__init__(rootConfig, workQueue, key, output, False)
 
-        self.writePrivateKey = False
-        self.outputs = rootConfig['Egresses']
+       

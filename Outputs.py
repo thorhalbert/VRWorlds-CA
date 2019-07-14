@@ -4,6 +4,11 @@ import os
 import yaml
 import abc
 import io
+import time
+
+import shutil
+
+import tarfile
 
 import CertCreator
 
@@ -30,28 +35,33 @@ class Outputs(metaclass=abc.ABCMeta):
 
     writePrivateKey = False
 
-    Manifest = []
+    Manifest = None
     PassPhrases = []
 
     Path = None
     Tmp = None
 
-    def __init__(self, rootConfig, workQueue, key, output):
+    def __init__(self, rootConfig, workQueue, key, output, CAPrivate):
         self.rootConfig = rootConfig
         self.workQueue = workQueue
         self.key = key
         self.__output = output[key]
 
-        # pprint(output)
+        self.writePrivateKey = CAPrivate
 
         self.PublicKeyFile = self.__output['Public-Key']
         self.Path = self.__output['Path']
         self.Tmp = self.__output['Tmp']
 
+        self.Manifest = []
+
+        pprint(self.__output)
+
     def RecapitulateExistingCerts(self):
         pass
 
     def ExportCerts(self):
+        print("Export roots: ", self.writePrivateKey)
         self._exportCerts(self.workQueue.root_certificates,
                           self.writePrivateKey)
         self._exportCerts(self.workQueue.certificates, True)
@@ -127,11 +137,35 @@ class Outputs(metaclass=abc.ABCMeta):
         with open(pasF, 'w') as yaml_file:
             yaml.dump(self.Manifest, yaml_file, default_flow_style=False)
 
+        # pprint(self.Manifest)
+
     def GenerateLog(self):
         pass
 
     def Close(self):
-        pass
+        print("[Remove: "+self.Tmp+']')
+        shutil.rmtree(self.Tmp)
 
     def _exportCerts(self, queue, writePriv):
-        CertCreator.ExportCerts(self.key, self, queue, writePriv)
+        CertCreator.ExportCerts(self.key, self, self.Manifest, queue, writePriv)
+
+    def __addFile(self, tar, file):
+        real = os.path.join(self.Tmp, file)
+        tar.add(real, arcname=file)
+
+    def GenerateTarFile(self):
+        print(self.key, self.Path, self.Tmp)
+        # pprint(self.Manifest)
+
+        tarFile = os.path.join(self.Path, self.key+'_' +
+                               time.strftime('%Y%m%d-%H%M%S')+'.tgz')
+        with tarfile.open(tarFile, "w:gz") as tar:
+            self.__addFile(tar, 'manifest.yaml')
+
+            for m in self.Manifest:
+                for e in ['CertificateFile', 'PrivateKeyFile']:
+                    if e in m:
+                        self.__addFile(tar, m[e])
+
+            self.__addFile(tar, 'passphrases.yaml')
+            self.__addFile(tar, 'passphrases.yaml.encrypted')

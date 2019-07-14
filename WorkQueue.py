@@ -105,7 +105,7 @@ class WorkQueue():
             egressObj.ExportCerts()
 
         for backup in self.backups:
-            print("[Process Backup: "+egress+']')
+            print("[Process Backup: "+backup+']')
 
             backupObj = self.backups[backup]
             backupObj.ExportCerts()
@@ -120,14 +120,12 @@ class WorkQueue():
             egressObj.ExportPassPhrases()
 
         for backup in self.backups:
-            print("[Passphrases for Backup: "+egress+']')
+            print("[Passphrases for Backup: "+backup+']')
 
             backupObj = self.backups[backup]
             backupObj.ExportPassPhrases()
 
     def ExportManifest(self):
-        # write encrypted passphrase databases to backups and egresses
-
         for egress in self.egresses:
             print("[Manifest for Egress: "+egress+']')
 
@@ -135,10 +133,31 @@ class WorkQueue():
             egressObj.ExportManifest()
 
         for backup in self.backups:
-            print("[Manifest for Backup: "+egress+']')
+            print("[Manifest for Backup: "+backup+']')
 
             backupObj = self.backups[backup]
             backupObj.ExportManifest()
 
+    def ExportTarFile(self):
+        # write encrypted passphrase databases to backups and egresses
+
+        for egress in self.egresses:
+            print("[Tar for Egress: "+egress+']')
+
+            egressObj = self.egresses[egress]
+            egressObj.GenerateTarFile()
+
+        for backup in self.backups:
+            print("[Tar for Backup: "+backup+']')
+
+            backupObj = self.backups[backup]
+            backupObj.GenerateTarFile()
+
     def Close(self):
-        pass
+        for egress in self.egresses:
+            egressObj = self.egresses[egress]
+            egressObj.Close()
+
+        for backup in self.backups:
+            backupObj = self.backups[backup]
+            backupObj.Close()

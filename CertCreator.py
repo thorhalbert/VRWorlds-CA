@@ -91,7 +91,7 @@ def checkExistingCert(certificates, start, end):
     return start, end, 0
 
 
-def EnqueueCertificates(certificates, cType, name, quantum, load, lead, existing, s, e):
+def EnqueueCertificates(certList, cType, name, quantum, load, lead, existing, s, e):
     queued = {
         'Target': name,
         'Enqueued': True,
@@ -105,7 +105,7 @@ def EnqueueCertificates(certificates, cType, name, quantum, load, lead, existing
         'Stop': e
     }
 
-    certificates.append(queued)
+    certList.append(queued)
 
 
 def GenerateNewCerts(workQueue):
@@ -164,7 +164,9 @@ def __generateCert(certToMake, workQueue):
     CN = str(id) + '@' + rootConfig['Domain']
     O = rootConfig['Manufacturer-Id'] + '@' + rootConfig['Domain']
     OU = str(id) + ' / ' + \
-        certToMake['CertType'] + ' / ' + certToMake['CertClass']
+        certToMake['CertType'] + ' / ' + \
+        certToMake['CertClass'] + ' / ' + \
+        certToMake['Target']
     C = locale['Country']
     ST = locale['State']
     L = locale['City']
@@ -235,15 +237,8 @@ def __generateCert(certToMake, workQueue):
     certToMake['Persisted'] = False
     certToMake['Enqueued'] = False
 
-    #fn = certToMake['CertType'] + '-'
-    #fn += str(id) + ".pem"
-    #fn = fn.replace('/','_')
 
-    # with open(fn, "wb") as f:
-    #    f.write(certificate.public_bytes(serialization.Encoding.PEM))
-
-
-def FindCertificates(cType, name,  certificates, quantum, load, lead):
+def FindCertificates(cType, name,  certList, quantum, load, lead):
     # Compute the slice map from the quantum and the lead-time
 
     sliceMap = getYearMap(quantum, lead)
@@ -253,12 +248,12 @@ def FindCertificates(cType, name,  certificates, quantum, load, lead):
         sliceStart = sliceMap[i]
         sliceEnd = sliceMap[i+1]
 
-        s, e, existing = checkExistingCert(certificates, sliceStart, sliceEnd)
+        s, e, existing = checkExistingCert(certList, sliceStart, sliceEnd)
 
         if s == None:
             continue
 
-        EnqueueCertificates(certificates, cType, name, quantum,
+        EnqueueCertificates(certList, cType, name, quantum,
                             load, lead, existing, s, e)
 
 
@@ -267,12 +262,12 @@ def GenPassphrase():
     return str(uuid.uuid4()), phrase, base64.b64encode(phrase).decode('utf-8')
 
 
-def ExportCerts(key, output, queue, writePriv):
+def ExportCerts(key, output, manifest, queue, writePriv):
     print("[Output "+key+'] ')
 
     for cert in queue:
         # the passphrase uuid id is not actually written to the cert, just the manifest
-        
+
         manifestEntry = {
             'Id': cert['Id'],
             'CertInfo': {
@@ -287,7 +282,7 @@ def ExportCerts(key, output, queue, writePriv):
             }
         }
 
-        fnb = cert['CertType'] + '-' + cert['Id']
+        fnb = cert['CertType'] + '-' + cert['Target'] + '-' + cert['Id']
         fnb = fnb.replace('/', '_')
         fn = fnb + ".pem"
 
@@ -325,4 +320,5 @@ def ExportCerts(key, output, queue, writePriv):
                         phraseBytes),
                 ))
 
-        output.Manifest.append(manifestEntry)
+        manifest.append(manifestEntry)
+        
