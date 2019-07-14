@@ -184,7 +184,8 @@ def __generateCert(certToMake, workQueue):
         x509.NameAttribute(NameOID.LOCALITY_NAME, L),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, O),
         x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, OU),
-        x509.NameAttribute(NameOID.COMMON_NAME, CN)])
+        x509.NameAttribute(NameOID.COMMON_NAME, CN),
+        x509.NameAttribute(NameOID.GIVEN_NAME, rootConfig['Manufacturer-Name'])])
 
     # There's probably several other fields here we can support, though maybe not for root
     # or signers.  The Kudo servers can use them

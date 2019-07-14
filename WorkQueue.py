@@ -3,10 +3,17 @@
 import os
 import yaml
 import time
+import datetime
 
 import Egresses
 import Backups
 import CertCreator
+
+from pprint import pprint
+
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 
 # Class to manage the work queue
 
@@ -23,6 +30,10 @@ class WorkQueue():
 
     root_certificates = []
     certificates = []
+
+    # last date for cert
+    root_cert_last = datetime.datetime(1900, 1, 1)
+    cert_last = {}
 
     current_root = None
 
@@ -44,7 +55,100 @@ class WorkQueue():
 
     def AssimilateExistingCerts(self):
         # read in all existing certs and decrypt
-        pass
+
+        maniFile = os.path.join(self.rootConfig['CertPath'], 'manifest.yaml')
+        if not os.path.exists(maniFile):
+            print('[Initial Run - Manifest File Not Seen]')
+            return
+
+        print("[Read Current Manifest]")
+        with open(maniFile, 'r') as stream:
+            try:
+                manifest = yaml.safe_load(stream)
+
+            except yaml.YAMLError as exc:
+                print(exc)
+
+                exit(10)
+
+        for cert in manifest:
+            info = cert['CertInfo']
+
+            certEntry = {
+                'Id': cert['Id'],
+                'Target': info['Target'],
+                'Enqueued': False,
+                'CertType': info['Cert-Type'],
+                'CertClass': info['Cert-Class'],
+                'Quantum': info['Quantum'],
+                'Lead-Time': info['Lead-Time'],
+                'Existing': True,
+                'Load': info['Load'],
+                'Start': info['Valid-From'],
+                'Stop': info['Valid-To'],
+                'PhraseKey': cert['PhraseKey'],
+                'CertificateFile': cert['CertificateFile'],
+                'PrivateKeyFile': cert['PrivateKeyFile'],
+            }
+
+            # We now need to bring the actual cert in -- we always write to egress/backup
+            # and we have to decrypt the passprase and then decrypt the private key with that
+
+            # Read the cert - someday we'll want to trap errors - losing a cert is a catastrophe anyway
+
+            certFile = os.path.join(
+                self.rootConfig['CertPath'], cert['CertificateFile'])
+
+            print("[Load Cert: "+cert['CertificateFile']+']')
+            with open(certFile, "rb") as cert_file:
+                cert_body = x509.load_pem_x509_certificate(
+                    cert_file.read(), default_backend())
+
+            certEntry['Certificate'] = cert_body
+            certEntry['Persisted'] = True
+            certEntry['Enqueued'] = False
+
+            # Read the private key
+
+            passphrase = self.passPhrases.RetreivePassPhrase(cert['PhraseKey'])
+
+            privateKeyFile = os.path.join(
+                self.rootConfig['CertPath'], cert['PrivateKeyFile'])
+
+            print("[Load Key: "+cert['PrivateKeyFile']+']')
+            with open(privateKeyFile, "rb") as key_file:
+                private_key = serialization.load_pem_private_key(
+                    key_file.read(),
+                    password=passphrase,
+                    backend=default_backend())
+
+            certEntry['PrivateKey'] = private_key
+
+            # Capture cert into correct type, and also capture the last date
+            #  Since they're always created contiguously we don't need to deal
+            #  with any certs who's start is before this max ending (there might be
+            #  need to make a truncated cert, but only new certs after this date)
+
+            if info['Cert-Class'] == 'Root':
+                self.root_certificates .append(certEntry)
+
+                if info['Valid-To'] > self.root_cert_last:
+                    self.root_cert_last = info['Valid-To']
+            else:
+                self.certificates.append(certEntry)
+
+                certKey = info['Cert-Class']+'/'+info['Target']
+                if certKey not in self.cert_last:
+                    self.cert_last[certKey] = datetime.datetime(1900, 1, 1)
+
+                if info['Valid-To'] > self.cert_last[certKey]:
+                    self.cert_last[certKey] = info['Valid-To']
+
+        print(self.root_cert_last)
+        pprint(self.cert_last)
+
+        print("Got it")
+        exit(10)
 
     def DiscoverAllNewWork(self):
         self.__findCAWork()

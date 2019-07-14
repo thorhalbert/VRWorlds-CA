@@ -42,7 +42,7 @@ class ManagePassPhrases():
             return
 
         # See if the phrase matches
-        originalPassphrase = self.__readPassPhrase(self.helloUuid)
+        originalPassphrase = self.RetreivePassPhrase(self.helloUuid)
 
         #print("Phrases: ", originalPassphrase, self.passPhrase)
         originalPassphrase = originalPassphrase.decode('utf-8')
@@ -87,7 +87,7 @@ class ManagePassPhrases():
 
         self.phraseDb.set(uuid, enList)
 
-    def __readPassPhrase(self, uuid):
+    def RetreivePassPhrase(self, uuid):
         decRaw = self.phraseDb.get(uuid)
 
         parts = decRaw.split('|')
